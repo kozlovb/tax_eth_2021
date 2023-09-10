@@ -31,9 +31,7 @@ def read_coinbase_log(file_name):
     lines  = []
     with open(file_name, 'r') as file1:
         lines = file1.readlines()
-
     count = 0
-
     operation = []
     quantities = []
     dates = []
@@ -81,7 +79,6 @@ def read_coinbase_log(file_name):
             if lines[j]:
                 prices.append(float(lines[j]))
         else:
-
             i = j + 1
             break
 
@@ -100,7 +97,7 @@ def read_coinbase_log(file_name):
         exit()
     for k in range(0, len(operation)):
         trade_int.append([operation[k], quantities[k], dates[k], prices[k], fees[k]])
-        state_entries.append(StateEntry(operation[k], quantities[k], dates[k], prices[k], fees[k]))
+        #state_entries.append(StateEntry(operation[k], quantities[k], dates[k], prices[k], fees[k]))
     return trade_int
 
 def check_when_balance_0(register):
@@ -145,13 +142,10 @@ def enter_trade(trade, register):
                 tmp.append(register[i])
     check_when_balance_0(register)
     check_sorted_by_date(tmp)
-    error_eth = 0
-    if trade[1] > 0.00001 and trade[0] == 'SELL':
-        error_eth += trade[1]
-    return profit, tmp, error_eth
+    return profit, tmp
 
 def read_kraken_log(filename):
-    trades, state_entries = read_coinbase_log(filename)
+    trades = read_coinbase_log(filename)
     # In coinbase trades there is price and in kraken total amount
     # thus here we transform amount to price:
     for t in trades:
@@ -241,12 +235,8 @@ def calculate():
     while index_coinbase < len(trades_coinbase) or index_kraken_spot < len(trades_kraken_spot):
         #pick up the earliest of the two
         t, index_coinbase, index_kraken_spot, index_kraken_futures = pick_trade_update_indexes(index_coinbase, index_kraken_spot, index_kraken_futures, trades_coinbase, trades_kraken_spot, trades_kraken_futures)
-        trade_profit, register, trade_error = enter_trade(t, register)
-        if trade_error > 0.5:
-            print("what")
+        trade_profit, register = enter_trade(t, register)
         profit = profit + trade_profit
-        error += trade_error
-
 
     f = open("new_register.txt", "w")
     for r in register:
@@ -260,7 +250,6 @@ def calculate():
     print("total_fee", total_fee)
 
     print("profit minus fee", profit - total_fee)
-    print("error ", error)
 
 
 
