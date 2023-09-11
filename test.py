@@ -41,8 +41,8 @@ fees
 # futures kraken
 '''
 uid,dateTime,account,type,symbol,change,new balance,new average entry price,trade price,mark price,funding rate,realized pnl,fee,realized funding,collateral
-1,2021-02-01 08:19:06,f-eth:usd,futures trade,eth,-0.00000916188,0.99976732317,,2728.70000000000000000000,2731.40000000000000000000,,-0.1,0.00000916188,,ETH
 2,2021-12-01 08:19:06,f-eth:usd,futures trade,eth,-0.00000916188,0.99976732317,,2728.70000000000000000000,2731.40000000000000000000,,0.05,0.00000916188,,ETH
+1,2021-02-01 08:19:06,f-eth:usd,futures trade,eth,-0.00000916188,0.99976732317,,2728.70000000000000000000,2731.40000000000000000000,,-0.1,0.00000916188,,ETH
 '''
 
 coinbase_trade_files = ["/Users/bkozlov/Tax2021Repo/tax_eth_2021/data_coinbase_test.txt"]
