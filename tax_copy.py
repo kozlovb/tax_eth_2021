@@ -3,40 +3,31 @@ from datetime import datetime
 from datetime import timedelta
 from retrieve_data_module import *
 
-
-# A state entry consists of quantity, time in seconds since epoch and price
-# 'Buy', quantity ,date, , price, fee
-class StateEntry:
-    def __init__(self, operation, qty, date, price, fee):
-        self.operation = operation
-        self.qty = qty
-        self.date = date
-        self.price = price
-        self.fee = fee
-
-
 def parse_to_date(line):
     x = line.split()
     year_month_day = x[0].split("-")
     hour_min_sec = x[1].split(":")
-    # datetime(year, month, day, hour, minute, second, microsecond)
+# datetime(year, month, day, hour, minute, second, microsecond)
+    print('year_month_day', year_month_day)
+    print('hour_min_sec', hour_min_sec)
     return datetime(int(year_month_day[0]), int(year_month_day[1]), int(year_month_day[2]), int(hour_min_sec[0]), int(hour_min_sec[1]), int(hour_min_sec[2]))
 
 #This function reads datainit.txt and data.txt
 def read_coinbase_log(file_name):
     trade_int = []
-    state_entries = []
     lines  = []
     with open(file_name, 'r') as file1:
         lines = file1.readlines()
+
     count = 0
+
     operation = []
     quantities = []
     dates = []
     prices = []
     fees = []
 
-    # read operations
+    # Strips the newline character
     i = 0
     for j in range(i,len(lines)):
         lines[j] = lines[j].strip()
@@ -50,28 +41,30 @@ def read_coinbase_log(file_name):
             i = j + 1
             break
 
-    # read dates
     for j in range(i,len(lines)):
         lines[j] = lines[j].strip()
         lines[j] = lines[j].rstrip()
         if lines[j] != "quantity":
             if lines[j]:
+                print(parse_to_date(lines[j]))
                 dates.append(parse_to_date(lines[j]))
         else:
             i = j + 1
             break
 
-    # read qty
     for j in range(i, len(lines)):
         lines[j] = lines[j].strip()
         lines[j] = lines[j].rstrip()
         if lines[j] != "price":
+            if lines[j]:
+                if lines[j] == "0.05366393":
+                    print("Problem")
+
             quantities.append(float(lines[j]))
         else:
             i = j + 1
             break
 
-    # read price
     for j in range(i, len(lines)):
         lines[j] = lines[j].strip()
         lines[j] = lines[j].rstrip()
@@ -79,10 +72,10 @@ def read_coinbase_log(file_name):
             if lines[j]:
                 prices.append(float(lines[j]))
         else:
+
             i = j + 1
             break
 
-    # read fees
     for j in range(i, len(lines)):
         lines[j] = lines[j].strip()
         lines[j] = lines[j].rstrip()
@@ -98,7 +91,6 @@ def read_coinbase_log(file_name):
         exit()
     for k in range(0, len(operation)):
         trade_int.append([operation[k], quantities[k], dates[k], prices[k], fees[k]])
-        #state_entries.append(StateEntry(operation[k], quantities[k], dates[k], prices[k], fees[k]))
     return trade_int
 
 def check_when_balance_0(register):
@@ -143,11 +135,13 @@ def enter_trade(trade, register):
                 tmp.append(register[i])
     check_when_balance_0(register)
     check_sorted_by_date(tmp)
-    return profit, tmp
-
+    error_eth = 0
+    if trade[1] > 0.00001 and trade[0] == 'SELL':
+        error_eth += trade[1]
+    return profit, tmp, error_eth
 def read_kraken_log(filename):
     trades = read_coinbase_log(filename)
-    # In coinbase trades there is price and in kraken total amount
+    # In coinbase trades have price and in kraken total amount
     # thus here we transform amount to price:
     for t in trades:
         t[3] = t[3]/t[1]
@@ -159,6 +153,7 @@ def check_sorted_by_date(register):
     t_old = register[0][2]
     for t in register:
         if t[2] < t_old:
+            print(t)
             print("unsorted date " , t[2], " ", t_old)
             #Lets imagine that trades are adopted to same type loss is basically a sell win is basically a buy.
 def pick_trade_update_indexes(index_coinbase, index_kraken_spot, index_kraken_futures, trades_coinbase, trades_kraken_spot, trades_kraken_futures):
@@ -186,7 +181,7 @@ def revert_filter_kraken_log(filename):
     reverted_lines.reverse()
     return reverted_lines
 
-def futures_to_regular_trades(f_trades, request_price_function):
+def futures_to_regular_trades(f_trades):
     trades = []
     futures_gain = 0
     futures_loss = 0
@@ -201,7 +196,7 @@ def futures_to_regular_trades(f_trades, request_price_function):
         if pnl == 0:
             continue
         date_trade = parse_to_date(f_trade[1])
-        price = request_price_function(date_trade.timestamp())
+        price = request_price_online(date_trade.timestamp())
         if (pnl < 0):
             futures_loss += price * pnl
             trades.append(['SELL', -pnl,date_trade, price, 0])
@@ -210,19 +205,20 @@ def futures_to_regular_trades(f_trades, request_price_function):
             trades.append(['BUY', pnl, date_trade, price, 0])
     print("trades futures profit " + str(futures_gain))
     print("trades futures loss " + str(futures_loss))
-    return trades, futures_gain, futures_loss
-
+    return trades
 # Main function here
-def calculate(coinbase_trade_files, kraken_spot_file, kraken_futures_file, request_price_function, print_to_file):
+def calculate():
     trades_coinbase = []
     register = []
     profit = 0
     error = 0
-    for coinbase_log_file in coinbase_trade_files:
-        trades_coinbase = trades_coinbase + read_coinbase_log(coinbase_log_file)
-    trades_kraken_spot = read_kraken_log(kraken_spot_file)
-    trades_kraken_futures_row = revert_filter_kraken_log(kraken_futures_file)
-    trades_kraken_futures, futures_profit, futures_loss = futures_to_regular_trades(trades_kraken_futures_row, request_price_function)
+    trades_coinbase = read_coinbase_log("/Users/bkozlov/Desktop/Taxes2021/ETH_TAX/UsedMaterial/datainit.txt")
+    trades_coinbase = trades_coinbase + read_coinbase_log("data1.txt")
+    trades_coinbase = trades_coinbase + read_coinbase_log("data2.txt")
+    trades_coinbase = trades_coinbase + read_coinbase_log("data3.txt")
+    trades_kraken_spot = read_kraken_log("adapted_ledger_log.txt")
+    trades_kraken_futures_row = revert_filter_kraken_log("/Users/bkozlov/Desktop/Taxes2021/ETH_TAX/UsedMaterial/kraken_log.txt")
+    trades_kraken_futures = futures_to_regular_trades(trades_kraken_futures_row)
     #register
     #          0         1       2       3     4
     #trade = ['BUY', quantity ,date, , price, fee]
@@ -231,30 +227,35 @@ def calculate(coinbase_trade_files, kraken_spot_file, kraken_futures_file, reque
     index_coinbase = 0
     index_kraken_spot = 0
     index_kraken_futures = 0
-    while index_coinbase < len(trades_coinbase) or index_kraken_spot < len(trades_kraken_spot) or index_kraken_futures < len(trades_kraken_futures):
+    while index_coinbase < len(trades_coinbase) or index_kraken_spot < len(trades_kraken_spot):
         #pick up the earliest of the two
         t, index_coinbase, index_kraken_spot, index_kraken_futures = pick_trade_update_indexes(index_coinbase, index_kraken_spot, index_kraken_futures, trades_coinbase, trades_kraken_spot, trades_kraken_futures)
-        trade_profit, register = enter_trade(t, register)
+        trade_profit, register, trade_error = enter_trade(t, register)
+        if trade_error > 0.5:
+            print("what")
         profit = profit + trade_profit
-    if print_to_file:
-        f = open(print_to_file, "w")
-        for r in register:
-            f.write(str(r[0]) +","+ str(r[1]) +","+ str(r[2].timestamp())+","+ str(r[3])+ "\n")
+        error += trade_error
+
+
+    f = open("new_register.txt", "w")
+    for r in register:
+        f.write(str(r[0]) +","+ str(r[1]) +","+ str(r[2].timestamp())+","+ str(r[3])+ "\n")
     total_fee = 0
     #no data on fee in kraken
     for t in trades_coinbase:
         total_fee += t[4]
+
     print("profit", profit)
     print("total_fee", total_fee)
 
     print("profit minus fee", profit - total_fee)
-    return register, futures_profit, futures_loss, profit, total_fee
+    print("error ", error)
 
-if __name__ == "__main__":
-    coinbase_trade_files = ["datainit.txt", "data1.txt", "data2.txt", "data3.txt"]
-    kraken_spot_file = "adapted_ledger_log.txt"
-    kraken_futures_file = "kraken_log.txt"
-    calculate(coinbase_trade_files, kraken_spot_file, kraken_futures_file, request_price_online, "new_register.txt")
+
+
+calculate()
+
+
 
 #0 uid,
 #1 dateTime,

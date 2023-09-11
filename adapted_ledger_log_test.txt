@@ -1,0 +1,9 @@
+SELL
+date
+2021-02-01 00:00:00
+quantity
+0.7
+price
+700
+fees
+0.0
