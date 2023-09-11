@@ -79,5 +79,5 @@ assert is_close(total_fee, 3)
 
 #CHECK FINAL STATE
 assert len(result_state) == 2
-#assert result_state[0][0] == 'BUY' and is_close(result_state[0][1], 1.2) and datetime(2021, 1, 1, 0, 0, 0) == result_state[0][2] and is_close(result_state[0][3], 800)
-#assert result_state[1][0] == 'BUY' and is_close(result_state[1][1], 0.05) and datetime(2021, 12, 1, 8, 19, 6) == result_state[1][2]  and is_close(result_state[1][3], 500)
+assert result_state[0][0] == 'BUY' and is_close(result_state[0][1], 1.2) and datetime(2021, 1, 1, 0, 0, 0) == result_state[0][2] and is_close(result_state[0][3], 800)
+assert result_state[1][0] == 'BUY' and is_close(result_state[1][1], 0.05) and datetime(2021, 12, 1, 8, 19, 6) == result_state[1][2]  and is_close(result_state[1][3], 500)

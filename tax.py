@@ -190,6 +190,7 @@ def futures_to_regular_trades(f_trades, request_price_function):
     trades = []
     futures_gain = 0
     futures_loss = 0
+    fee = 0
     
     # winning trade is like BUY trade + taxes for the win
     # loosing trade is like SELL trade of ETH, 
@@ -202,6 +203,8 @@ def futures_to_regular_trades(f_trades, request_price_function):
             continue
         date_trade = parse_to_date(f_trade[1])
         price = request_price_function(date_trade.timestamp())
+        fee = fee + float(f_trade[12])*price
+        trades.append(['SELL', -float(f_trade[12]),date_trade, price, 0])
         if (pnl < 0):
             futures_loss += price * pnl
             trades.append(['SELL', -pnl,date_trade, price, 0])
@@ -210,6 +213,7 @@ def futures_to_regular_trades(f_trades, request_price_function):
             trades.append(['BUY', pnl, date_trade, price, 0])
     print("trades futures profit " + str(futures_gain))
     print("trades futures loss " + str(futures_loss))
+    print("trades futures fee " + str(fee))
     return trades, futures_gain, futures_loss
 
 # Main function here
